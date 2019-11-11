@@ -11,11 +11,11 @@ output:
 
 ```{r}
 articleID <- 2-10-2014 # insert the article ID code here e.g., "10-3-2015"
-reportType <- "pilot" # specify whether this is the 'pilot' report or 'copilot' report
+reportType <- "copilot" # specify whether this is the 'pilot' report or 'copilot' report
 pilotNames <- "Maggie Perry" # insert the pilot's name here e.g., "Tom Hardwicke".
 copilotNames <- "Rondeline Williams" # # insert the co-pilot's name here e.g., "Michael Frank".
-pilotTTC <- "400" # insert the pilot's estimated time to complete (in minutes, it is fine to approximate) e.g., 120
-copilotTTC <- "60" # insert the co-pilot's estimated time to complete (in minutes, it is fine to approximate) e.g., 120
+pilotTTC <- 400 # insert the pilot's estimated time to complete (in minutes, it is fine to approximate) e.g., 120
+copilotTTC <- 60 # insert the co-pilot's estimated time to complete (in minutes, it is fine to approximate) e.g., 120
 pilotStartDate <- 11/5/19 # insert the piloting start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
 copilotStartDate <- 11/8/19 # insert the co-piloting start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
 completionDate <- 11/10/19 # insert the date of final report completion in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
@@ -76,6 +76,8 @@ View(data) #135 rows matches 135 participants reported before exclusions
 data <- data %>%
   filter(!is.na(Order)) #removed those who didn't return for T2 - matches 106 participants reported after exclusion
 
+View(data)
+
 ```
 
 # Step 4: Run analysis
@@ -89,13 +91,17 @@ data <- data %>%
 curious.items <- dplyr::select(data, T1_Roommate_Curious, T1_Social_Curious, T1_Essay_Curious, T1_Convo_Curious, T1_Song_Curious, T1_Finals_Curious, T1_Joke_Curious, T1_Photo_Curious, T1_FB_Curious, T2_Roommate_curious, T2_Social_curious, T2_Essay_curious, T2_Convo_curious, T2_Song_curious, T2_Finals_curious, T2_Joke_curious, T2_Photo_curious, T2_FB_curious)
 curious.alpha <- cronbach.alpha(curious.items, na.rm = TRUE)
 
+
 #Interesting Composite alpha = 0.90
 interestcomp.items <- dplyr::select(data, T1_Roommate_Interest_composite, T1_Social_Interest_composite, T1_Essay_Interest_composite, T1_Convo_Interest_composite, T1_Song_Interest_composite, T1_Finals_Interest_composite, T1_Joke_Interest_composite, T1_Photo_Interest_composite, T1_FB_Interest_composite, T2_Roommate_Interest_composite, T2_Social_Interest_composite, T2_Essay_Interest_composite, T2_Convo_Interest_composite, T2_Song_Interest_composite, T2_Finals_Interest_composite, T2_Joke_Interest_composite, T2_Photo_Interest_composite, T2_FB_Interest_composite)
 interestcomp.alpha <- cronbach.alpha(interestcomp.items, na.rm = TRUE)
 
+
 #Value Comparisons
-reportObject <- reproCheck(reportedValue = '.93', obtainedValue = curious.alpha, valueType = 'other') #minor error
-reportObject <- reproCheck(reportedValue = '.90', obtainedValue = interestcomp.alpha, valueType = 'other')
+reportObject <- reproCheck(reportedValue = '.93', obtainedValue = curious.alpha["alpha"], valueType = 'other') #minor error
+reportObject <- reproCheck(reportedValue = '.90', obtainedValue = interestcomp.alpha["alpha"], valueType = 'other')
+
+#RW Note- It seems reproCheck is running entire list of 'curious.alpha' and 'interestcomp.alpha' (both length=5), as separate reported values. Since we are only reproducing alphas, I added ["alpha"] to 'curious.alpha' and 'interestcomp.alpha' in the reproCheck functions
 
 ```
 
@@ -113,6 +119,9 @@ T1.curious <- groupwiseMean(T1_Curious ~ 1,
               conf   = 0.95, 
               digits = 3)
 T1sd.curious <- sd(data$T1_Curious, na.rm = TRUE)
+
+View(T1.curious)
+View(T1sd.curious)
 
 #Value Comparisons
 reportObject <- reproCheck(reportedValue = '3.99', obtainedValue = T1.curious$Mean, valueType = 'mean')
@@ -334,12 +343,14 @@ t.curious <- t.test(data$T2_Curious, data$T1_Curious, paired = TRUE)
 
 #Cohen's d = 0.28 ******* reported value is 0.27 - is this a rounding error?
 d.curious <- cohensD(data$T1_Curious, data$T2_Curious, method = "paired")
+View(d.curious)
 
 #Value Comparisons
 reportObject <- reproCheck(reportedValue = '2.88', obtainedValue = t.curious$statistic, valueType = 't')
 reportObject <- reproCheck(reportedValue = '0.005', obtainedValue = t.curious$p.value, valueType = 'p')
 reportObject <- reproCheck(reportedValue = '0.27', obtainedValue = d.curious, valueType = 'd') #minor error
 
+#RW Note- Also concluded d=.0279. Likely a rounding error on the author's part.
 
 #">Participants also underestimated how interesting they would find their responses. Predictions of interest at Time 1 (M = 3.54, SD = 1.01) were lower than ratings of actual interest experienced at Time 2 (M = 3.82, SD = 0.89), t(105) = 3.10, p = .003, d = 0.29."
 
@@ -349,11 +360,14 @@ t.interestcomp <- t.test(data$T2_Interest_Composite, data$T1_Interest_Composite,
 #Cohen's d = 0.30 ******* off slightly again - probably not rounding error this time?
 d.interestcomp <- cohensD(data$T1_Interest_Composite, data$T2_Interest_Composite, method = "paired")
 
+View(d.interestcomp)
+
 #Value Comparisons
 reportObject <- reproCheck(reportedValue = '3.10', obtainedValue = t.interestcomp$statistic, valueType = 't')
 reportObject <- reproCheck(reportedValue = '0.003', obtainedValue = t.interestcomp$p.value, valueType = 'p')
 reportObject <- reproCheck(reportedValue = '0.29', obtainedValue = d.interestcomp, valueType = 'd') #minor error
 
+#RW Note: I went back to the original paper and took a look at Table 1 where all t-tests, df, p-values, and ds are listed and I suspect there are small errors in the "Underestimate" column due to rounding error. Several of the values seem like they were rounded and then rounded again, causing this small difference between reported and observed values in this report.  
 
 #T test - Surprise p = 0.0004
 t.surprise <- t.test(data$T2_Surprised, data$T1_Surprised, paired = TRUE)
